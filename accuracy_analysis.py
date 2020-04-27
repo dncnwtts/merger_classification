@@ -9,10 +9,6 @@ import statsmodels.stats.proportion
 from tqdm import tqdm
 import pandas as pd
 
-plot_all_lines = False
-import warnings
-warnings.simplefilter('error', RuntimeWarning)
-
 
 def beta_std(k, N, alpha=0.32, method='beta'):
     ll, ul = statsmodels.stats.proportion.proportion_confint(k, N, alpha=alpha, method=method)
@@ -94,6 +90,39 @@ def L(N_M, r_I, r_M, N_Mhat, N_tot):
         L[i] = P(N_Mhat, N_M[i], N_I[i], r_I, r_M)
     #return L/sum(L*np.diff(N_M)[0])
     return L/max(L)
+
+
+
+def get_merger_prob(Mhats, r_Ms, r_Is):
+    '''
+    Given people's mesurements, Mhat, and their accuracy at making measurements,
+    r_M and r_I, we can get the probability that a given galaxy is a merger.
+    '''
+
+    P_M = 1
+    P_I = 1
+    for i in range(len(Mhats)):
+        if Mhats[i] == 0:
+            # the surveyor measured an isolated galaxy
+            # probability that we measured isolated galaxy given that it's a
+            # merger
+            P_Ihat_M = 1-r_Ms[i]
+            # probability that we measured isolated galaxy given that it's
+            # isolated
+            P_Ihat_I = r_Is[i]
+            P_M *= P_Ihat_M
+            P_I *= P_Ihat_I
+        else:
+            # the surveyor measured a merger
+            # probability that we measured merger galaxy given that it's a
+            # merger
+            P_Mhat_M = r_Ms[i]
+            # probability that we measured a merger given that it's
+            # isolated
+            P_Mhat_I = 1-r_Is[i]
+            P_M *= P_Mhat_M
+            P_I *= P_Mhat_I
+    return P_M/(P_M+P_I)
 
 
 def test1(N_M=0, N=10, r_I=0.7, r_M=0.8,
@@ -231,13 +260,41 @@ def test5():
     plt.plot(r_I, p_M)
     plt.xlabel(r'$r_I$')
     plt.ylabel(r'$p(\mathrm{{merger}}\mid\mathrm{{observed merger}},r_M={0},r_I)$'.format(r_M))
+
+
+    plt.figure()
+    r_M = np.linspace(0,1)
+    r_I = np.linspace(0,1)
+    r_M, r_I = np.meshgrid(r_M, r_I)
+    p_Mhat_M = r_M
+    p_Mhat_I = 1-r_I
+
+    p_M = p_Mhat_M/(p_Mhat_M + p_Mhat_I+1e-4)
+    plt.pcolormesh(r_M, r_I, p_M, vmin=0,vmax=1)
+    plt.colorbar(label=r'$p(M\mid r_M, r_I,\textrm{observed merger})$')
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
+
+
+    plt.figure()
+    p_Ihat_M = 1-r_M
+    p_Ihat_I = r_I
+
+    p_M = p_Ihat_M/(p_Ihat_M + p_Ihat_I+1e-4)
+    plt.pcolormesh(r_M, r_I, p_M, vmin=0,vmax=1)
+    plt.colorbar(label=r'$p(M\mid r_M, r_I,\textrm{observed isolated})$')
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
     plt.show()
+
+
+
 
     return
 
 
 
-def test6():
+def test6(n_survey=5):
     '''
     Let us simulate a group of observers with known accuracies, and get the
     probability of a galaxy actually being a merger.
@@ -245,31 +302,107 @@ def test6():
     N = 1
     N_M = 1
     f_M = 1
-    n_survey = 5
-    N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=N_M, I=0.8,
+    N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=N_M, I=0.4,
             M=0.8)
     p_Mhat_M = r_Ms
     p_Mhat_I = 1-r_Is
-    p_M = p_Mhat_M/(p_Mhat_M + p_Mhat_I)
-    plt.hist(p_M)
+    p_Ihat_M = 1-r_Ms
+    p_Ihat_I = r_Is
+    p_M = np.zeros(len(r_Ms))
+    for i in range(len(p_M)):
+        if N_Mhats[i] == 1:
+            p_M[i] = (p_Mhat_M/(p_Mhat_M + p_Mhat_I))[i]
+        else:
+            p_M[i] = (p_Ihat_M/(p_Ihat_M + p_Ihat_I))[i]
+    plt.scatter(r_Ms, r_Is, c=p_M)
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
+    plt.colorbar(label=r'$p(\mathrm{merger}\mid\mathrm{observation})$')
+    plt.title('All observations')
+
+    inds = (N_Mhats == 0)
+    plt.figure()
+    plt.scatter(r_Ms[inds], r_Is[inds], c=p_M[inds])
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
+    plt.colorbar(label=r'$p(\mathrm{merger}\mid\mathrm{observation})$')
+    plt.title('Observed isolated')
+
+    inds = (N_Mhats == 1)
+    plt.figure()
+    plt.scatter(r_Ms[inds], r_Is[inds], c=p_M[inds])
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
+    plt.colorbar(label=r'$p(\mathrm{merger}\mid\mathrm{observation})$')
+    plt.title('Observed merger')
 
 
+
+
+    print('Input galaxy')
     print(N_input)
+    print('Observations')
     print(N_Mhats)
-    print(r_Ms)
-    print(r_Is)
 
 
-    P = 1
-    den_M = 1
-    den_I = 1
+    P_M = 1
+    P_I = 1
     for i in range(len(N_Mhats)):
-        den_M *= r_Ms[i]
-        den_I *= 1-r_Is[i]
-        P *= r_Ms[i]
-    den = den_M + den_I
-    print('Probability of being a merger', P/den)
+        if N_Mhats[i] == 1:
+            # what's the probability of measuring a merger given that it's
+            # actually a merger
+            P_M *= r_Ms[i]
+            # what's the probability of measuring a merger given that it's
+            # actually isolated
+            P_I *= 1-r_Is[i]
+        else:
+            # what's the probability of measuring an isolated galaxy given that it's
+            # actually a merger
+            P_M *= 1-r_Ms[i]
+            # what's the probability of measuring an isolated galaxy given that it's
+            # actually isolated
+            P_I *= r_Is[i]
+    P = P_M/(P_I + P_M)
+    print('Probability of being a merger', P)
     print('Average answer', N_Mhats.mean())
+    plt.figure()
+
+
+
+    # Let's pretend that every person has the exact same set of accuracies.
+    r_Ms = np.linspace(0,1)
+    r_Is = np.linspace(0,1)
+    r_Ms, r_Is = np.meshgrid(r_Ms, r_Is)
+
+    P_M = np.ones_like(r_Ms)
+    P_I = np.ones_like(r_Ms)
+    for i in range(len(N_Mhats)):
+        for j in range(len(r_Ms)):
+            for k in range(len(r_Is)):
+                if N_Mhats[i] == 1:
+                    P_M[j,k] *= r_Ms[j,k]
+                    P_I[j,k] *= 1-r_Is[j,k]
+                else:
+                    P_M[j,k] *= 1-r_Ms[j,k]
+                    P_I[j,k] *= r_Is[j,k]
+    P = P_M/(P_M+P_I)
+    plt.pcolormesh(r_Ms, r_Is, P)
+    plt.colorbar(label=r'$p(M\mid r_M, r_I,\{\textrm{observations}\})$')
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
+
+
+    P *= 0
+    plt.figure()
+    for j in range(len(r_Ms)):
+        for k in range(len(r_Is)):
+            r_I_same = r_Is[j,k]*np.ones_like(N_Mhats)
+            r_M_same = r_Ms[j,k]*np.ones_like(N_Mhats)
+            P[j,k] = get_merger_prob(N_Mhats, r_M_same, r_I_same)
+    plt.pcolormesh(r_Ms, r_Is, P)
+    plt.colorbar(label=r'$p(M\mid r_M, r_I,\{\textrm{observations}\})$')
+    plt.xlabel(r'$r_M$')
+    plt.ylabel(r'$r_I$')
     plt.show()
 
     return
@@ -298,4 +431,5 @@ if __name__ == '__main__':
     plt.show()
     '''
 
-    test6()
+    #test5()
+    test6(n_survey=10)
