@@ -23,7 +23,7 @@ def pdf_std(pdf, x, alpha=0.32):
     ul = x[1:][cdf > (0.5+(1-alpha)/2)][0]
     return ll, ul, (ul-ll)/2
     
-def make_sample(N, f_M, n, N_M=None, width_I=0.05, width_M=0.05, I=0.6, M=0.8):
+def make_sample(N, f_M, n, N_M=None, width_I=0.05, width_M=0.05, r_I=0.6, r_M=0.8):
     if N_M is None:
         true_gals = np.random.choice([0,1], size=N, p=[1-f_M, f_M])
         true_gals.sort()
@@ -32,8 +32,8 @@ def make_sample(N, f_M, n, N_M=None, width_I=0.05, width_M=0.05, I=0.6, M=0.8):
     f_M_sample = true_gals.sum()/N
     N_true = true_gals.sum()
     
-    r_Ms = np.random.uniform(low=M-width_M/2, high=M+width_M/2, size=n)
-    r_Is = np.random.uniform(low=I-width_I/2, high=I+width_I/2, size=n)
+    r_Ms = np.random.uniform(low=r_M-width_M/2, high=r_M+width_M/2, size=n)
+    r_Is = np.random.uniform(low=r_I-width_I/2, high=r_I+width_I/2, size=n)
 
     # Matrix of classifier answers
     m = np.zeros((n, N), dtype='int')
@@ -146,8 +146,8 @@ def test1(N_M=0, N=10, r_I=0.7, r_M=0.8,
 
 
     f_M = N_M/N
-    N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=0, width_I=0.00,
-            width_M=0.00, I=r_I, M=r_M)
+    N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=N_M, width_I=0.00,
+            width_M=0.00, r_I=r_I, r_M=r_M)
     bins = np.arange(N+1)-0.5
     plt.hist(N_Mhats, bins=bins, density=True)
     plt.axvline(N_M, label='Number of input mergers', color='b')
@@ -165,7 +165,7 @@ def test2(N_M=0, N=10, r_I=0.7, r_M=0.8, n_survey=25):
     '''
     f_M = N_M/N
     N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=N_M, width_I=0.00,
-            width_M=0.00, I=r_I, M=r_M)
+            width_M=0.00, r_I=r_I, r_M=r_M)
 
 
 
@@ -302,8 +302,8 @@ def test6(n_survey=5):
     N = 1
     N_M = 1
     f_M = 1
-    N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=N_M, I=0.4,
-            M=0.8)
+    N_input, N_Mhats, r_Ms, r_Is = make_sample(N, f_M, n_survey, N_M=N_M, r_I=0.4,
+            r_M=0.8)
     p_Mhat_M = r_Ms
     p_Mhat_I = 1-r_Is
     p_Ihat_M = 1-r_Ms
@@ -408,7 +408,6 @@ def test6(n_survey=5):
     return
 
 if __name__ == '__main__':
-    '''
     N = 50
     Nhat = np.arange(N+1)
     r_M = 0.8
@@ -432,4 +431,5 @@ if __name__ == '__main__':
     '''
 
     #test5()
-    test6(n_survey=10)
+    test6(n_survey=1000)
+    '''
