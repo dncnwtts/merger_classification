@@ -70,7 +70,7 @@ pgm.add_node('NMhat2', r'$\hat N_{I,2}$', 1, 3.5)
 pgm.add_node("NMhat", r'$\hat N_M$', 2, 4, observed=True)
 
 pgm.add_node("NI", r"$N_I$", -1, 2)
-pgm.add_node('rI', r'$r_M$', 0.5, 2)
+pgm.add_node('rI', r'$r_I$', 0.5, 2)
 pgm.add_node('NIhat1', r'$\hat N_{I,1}$', 1, 2.5)
 pgm.add_node('NIhat2', r'$\hat N_{M,2}$', 1, 1.5)
 pgm.add_node("NIhat", r'$\hat N_I$', 2, 2, observed=True)
