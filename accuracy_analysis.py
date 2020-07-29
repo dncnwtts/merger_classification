@@ -77,8 +77,30 @@ def P(N_Mhat, N_M, N_I, r_I, r_M):
     P = 0
     for N_Mhat1 in np.arange(0, N_M+1):
         N_Mhat2 = N_Mhat - N_Mhat1
-        P1 = binom(N_M, N_Mhat1)*r_M**N_Mhat1*(1-r_M)**(N_M-N_Mhat1)
-        P2 = binom(N_I, N_I-N_Mhat2)*r_I**(N_I-N_Mhat2)*(1-r_I)**N_Mhat2
+        if r_M == 0:
+            if N_Mhat1 == 0:
+                P1 = 1
+            else:
+                P1 = 0
+        elif r_M == 1:
+            if N_Mhat1 == N_M:
+                P1 = 1
+            else:
+                P1 = 0
+        else:
+            P1 = binom(N_M, N_Mhat1)*r_M**N_Mhat1*(1-r_M)**(N_M-N_Mhat1)
+        if r_I == 0:
+            if N_Mhat2 == N_I:
+                P2 = 1
+            else:
+                P2 = 0
+        elif r_I == 1:
+            if N_Mhat2 == 0:
+                P2 = 1
+            else:
+                P2 = 0
+        else:
+            P2 = binom(N_I, N_Mhat2)*r_I**(N_I-N_Mhat2)*(1-r_I)**N_Mhat2
         P += P1*P2
     return P
 
