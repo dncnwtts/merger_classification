@@ -123,8 +123,8 @@ pgm.add_node("NIhat", r'$\hat N_I$', 2, 2, observed=True)
 
 
 
-pgm.add_node("NMfake", r'$N_{M, \mathrm{sim}}$', -1, 3.33)
-pgm.add_node("NIfake", r'$N_{I, \mathrm{sim}}$', -1, 2.66)
+pgm.add_node("NMfake", r'$N_{M, \mathrm{syn}}$', -1, 3.33)
+pgm.add_node("NIfake", r'$N_{I, \mathrm{syn}}$', -1, 2.66)
 
 pgm.add_node("rMhat", r'$\hat r_M$', 0.25, 3.33, observed=True)
 pgm.add_node("rIhat", r'$\hat r_I$', 0.25, 2.66, observed=True)
